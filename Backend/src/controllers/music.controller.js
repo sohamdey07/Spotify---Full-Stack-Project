@@ -1,8 +1,10 @@
 import musicModel from "../models/music.model.js";
 import userModel from "../models/user.model.js";
+import albumModel from "../models/album.model.js";
 import {uploadMusicFile} from "../services/storage.service.js";
 import jwt from "jsonwebtoken";
 
+//function to create music
 async function createMusic(req, res) {
     const token=req.cookies.token;
     
@@ -46,6 +48,39 @@ async function createMusic(req, res) {
 
 }
 
+//function to create album
+async function createAlbum(req,res){
+    const token=req.cookies.token;
+    if(!token){
+        return res.status(401).json({message:"Unauthorized"});
+    }
+    try{
+        const decodedToken=jwt.verify(token,process.env.JWT_SECRET);
+        if(decodedToken.role!=="artist"){
+            return res.status(403).json({message:"You do not have access to create album"});
+        }
+        
+        const {title,musics} =req.body;
+
+        const newAlbum=await albumModel.create({
+            title:title,
+            artist:decodedToken.id,
+            musics:musics
+        });
+        res.status(201).json({
+            message:"Album created successfully",
+            album:{
+                id:newAlbum._id,
+                title:newAlbum.title,
+                artist:newAlbum.artist,
+                musics:newAlbum.musics
+            }
+        });
+    }
+    catch(err){
+        return res.status(401).json({message:"Invalid token"});
+    }
+}
 
 
-export { createMusic };
+export { createMusic , createAlbum };
