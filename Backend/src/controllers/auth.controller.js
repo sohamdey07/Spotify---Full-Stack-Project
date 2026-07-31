@@ -63,6 +63,17 @@ async function loginUser(req,res){
 
 }
 
+//function to logout a user
+async function logoutUser(req,res){
+    try{
+        await res.clearCookie("token");
+        res.status(200).json({ message: "Logout successful" });
+    }
+    catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Logout failed" });
+    }
+}
 
 
-export { registerUser, loginUser };
+export { registerUser, loginUser, logoutUser };
