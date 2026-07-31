@@ -6,81 +6,54 @@ import jwt from "jsonwebtoken";
 
 //function to create music
 async function createMusic(req, res) {
-    const token=req.cookies.token;
     
-    if(!token){
-        return res.status(401).json({message:"Unauthorized"});
-    }
+    const {title} =req.body;
+    const file=req.file;
 
-    try{
-        const decodedToken=jwt.verify(token,process.env.JWT_SECRET);
+    if(!file){
+        return res.status(400).json({message:"No file uploaded"});}
 
-        if(decodedToken.role!=="artist"){
-            return res.status(403).json({message:"You do not have access to create music"});
+    const result=await uploadMusicFile(file.buffer.toString('base64'));
+
+    const newMusic= await musicModel.create({
+        uri:result.url,
+        title:title,
+        artist:req.user.id
+    });
+    res.status(201).json({
+        message:"Music created successfully",
+        music:{
+            id:newMusic._id,
+            title:newMusic.title,
+            uri:newMusic.uri,
+            artist:newMusic.artist
         }
-
-        const {title} =req.body;
-        const file=req.file;
-
-        if(!file){
-            return res.status(400).json({message:"No file uploaded"});}
-
-        const result=await uploadMusicFile(file.buffer.toString('base64'));
-
-        const newMusic= await musicModel.create({
-            uri:result.url,
-            title:title,
-            artist:decodedToken.id
-        });
-        res.status(201).json({
-            message:"Music created successfully",
-            music:{
-                id:newMusic._id,
-                title:newMusic.title,
-                uri:newMusic.uri,
-                artist:newMusic.artist
-            }
-        });
-    }
-    catch(err){
-        return res.status(401).json({message:"Invalid token"});
-    }
+    });
 
 }
 
 //function to create album
 async function createAlbum(req,res){
-    const token=req.cookies.token;
-    if(!token){
-        return res.status(401).json({message:"Unauthorized"});
-    }
-    try{
-        const decodedToken=jwt.verify(token,process.env.JWT_SECRET);
-        if(decodedToken.role!=="artist"){
-            return res.status(403).json({message:"You do not have access to create album"});
-        }
         
-        const {title,musics} =req.body;
+    const {title,musics} =req.body;
 
-        const newAlbum=await albumModel.create({
-            title:title,
-            artist:decodedToken.id,
-            musics:musics
-        });
-        res.status(201).json({
-            message:"Album created successfully",
-            album:{
-                id:newAlbum._id,
-                title:newAlbum.title,
-                artist:newAlbum.artist,
-                musics:newAlbum.musics
-            }
-        });
-    }
-    catch(err){
-        return res.status(401).json({message:"Invalid token"});
-    }
+    const newAlbum=await albumModel.create({
+        title:title,
+        artist:req.user.id,
+        musics:musics
+    });
+    res.status(201).json({
+        message:"Album created successfully",
+        album:{
+            id:newAlbum._id,
+            title:newAlbum.title,
+            artist:newAlbum.artist,
+            musics:newAlbum.musics
+        }
+    });
 }
+
+
 
 
 export { createMusic , createAlbum };
